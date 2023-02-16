@@ -16,10 +16,12 @@ export default function App() {
       setSession(session)
     })
   }, [])
-
+  const sessionData=(session)=>{
+    setSession(session)
+  }
   return (
     <div className="container" style={{ padding: '50px 0 100px 0' }}>
-      {!session ? <Auth /> : <Account key={session.user.id} session={session} />}
+      {!session ? <Auth sessionData={sessionData}/> : <Account key={session.user.id} session={session} />}
     </div>
   )
 }

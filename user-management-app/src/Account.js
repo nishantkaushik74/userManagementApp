@@ -11,40 +11,44 @@ const Account = ({ session }) => {
   const [sessionUserId, setSessionUserId] = useState('')
   const [id, setId] = useState('')
   const [editfull_name, setEditFullName] = useState('')
+  const [editemail, setEditEmail] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+  const [editUserName, setEditUserName] = useState('')
   const [editwebsite, setEditWebsite] = useState('')
   const [avatar_url, setAvatarUrl] = useState('')
   const [editMode, setEditMode] = useState(false)
-  
+  const [createNewUser, setCreateNewUser] = useState(false)
   useEffect(() => {
     setEditMode(false);
     getProfile()
     getAllProfile()
-  }, [session])
+  },[session])
 
   const getProfile = async () => {
     try {
       setLoading(true)
-      const { user } = session
+      
+      const {user}= session
+;
+let { data, error, status } = await supabase
+.from('profiles')
+.select(`username, website, avatar_url,full_name`)
+.eq('id', user.id)
+.single()
 
-      let { data, error, status } = await supabase
-        .from('profiles')
-        .select(`username, website, avatar_url,full_name`)
-        .eq('id', user.id)
-        .single()
+if (error && status !== 406) {
+throw error
+}
 
-      if (error && status !== 406) {
-        throw error
-      }
-
-      if (data) {
+if (data) {
         
-        setSessionUserId(user.id)
+        setSessionUserId(data.id)
         setUsername(data.username)
         setWebsite(data.website)
         setAvatarUrl(data.avatar_url)
         setFullName(data.full_name)
-        setId(user.id)
-      }
+        setId(data.id)
+}
     } catch (error) {
       alert(error.message)
     } finally {
@@ -54,6 +58,7 @@ const Account = ({ session }) => {
   const getAllProfile = async () => {
     try {
       setLoading(true)
+       ;
        
       let { data, error, status } = await supabase
         .from('profiles')
@@ -86,8 +91,17 @@ const Account = ({ session }) => {
     setEditMode(false)
     setId('')
     setEditFullName('')
-   
+    setEditUserName('')
     setEditWebsite('')
+    setEditPassword('')
+  }
+  const cancelCreate=async ()=>{
+    setCreateNewUser(false)
+    setId('')
+    setEditFullName('')
+    setEditUserName('')
+    setEditWebsite('')
+    setEditPassword('')
   }
   const updateProfile = async (e) => {
     e.preventDefault()
@@ -118,10 +132,56 @@ const Account = ({ session }) => {
       setLoading(false)
     }
   }
+  const createProfile = async (e) => {
+    e.preventDefault()
+;
+    try {
+        
+      setLoading(true)
+      
+      const { data } = await supabase.auth.signUp({
+        email: editemail,
+        password: editPassword,
+      })
+ 
+      const updates = {
+        id:data.user.id,
+        username:editUserName,
+        website:'',
+        full_name:editfull_name,
+        avatar_url:'',
+        email:editemail,
+        password:editPassword
+      }
+
+      let { error } = await supabase.from('profiles').upsert(updates)
+      setAllUsers([])
+      await getAllProfile()
+      setCreateNewUser(false)
+      cancelCreate()
+      if (error) {
+        throw error
+      }
+     
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+const createUser =()=>{
+    setId('')
+    setEditFullName('')
+    setUsername('')
+    setEditWebsite('')
+    setEditEmail('')
+    setEditPassword('')
+    setCreateNewUser(true)
+}
 
   return (
     <div aria-live="polite">
-         <div>Logged In User Email: {session.user.email}</div>
+         <div>Logged In User Email: {session.user.email}</div> <button onClick={()=>{createUser()}}>create User</button>
       {editMode &&
        
         <form onSubmit={updateProfile} className="form-widget">
@@ -153,6 +213,55 @@ const Account = ({ session }) => {
           </div>
         </form>
       }
+      {createNewUser &&
+       
+       <form onSubmit={createProfile} className="form-widget">
+        
+         <div>
+           <label htmlFor="username">Name</label>
+           <input
+             id="username"
+             type="text"
+             value={editUserName || ''}
+             onChange={(e) => setEditUserName(e.target.value)}
+           />
+         </div>
+          
+         <div>
+           <label htmlFor="fullName">Full Name</label>
+           <input
+             id="fullName"
+             type="text"
+             value={editfull_name || ''}
+             onChange={(e) => setEditFullName(e.target.value)}
+           />
+         </div>
+         <div>
+           <label htmlFor="email">Email</label>
+           <input
+             id="email"
+             type="text"
+             value={editemail || ''}
+             onChange={(e) => setEditEmail(e.target.value)}
+           />
+         </div>
+         <div>
+           <label htmlFor="password">Password</label>
+           <input
+             id="password"
+             type="password"
+             value={editPassword || ''}
+             onChange={(e) => setEditPassword(e.target.value)}
+           />
+         </div>
+         <div>
+           <button className="button primary block" disabled={loading}>
+            create Profile
+           </button>  
+           <input type="button" onClick={()=>cancelCreate()} className="button primary block" value="Cancel" />
+         </div>
+       </form>
+     }
       {allUsers.length>0 && <table>
         <tbody>
         <tr>
