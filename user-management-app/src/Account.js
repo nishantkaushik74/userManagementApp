@@ -42,7 +42,7 @@ throw error
 
 if (data) {
         
-        setSessionUserId(data.id)
+        setSessionUserId(user.id)
         setUsername(data.username)
         setWebsite(data.website)
         setAvatarUrl(data.avatar_url)
@@ -103,6 +103,15 @@ if (data) {
     setEditWebsite('')
     setEditPassword('')
   }
+  const deleteUser= async(val)=>{
+    ;
+    const { data, error } = await supabase
+  .from('profiles')
+  .delete()
+  .match({ id: val.id })
+    // const { data, error, status } = await supabase.auth.admin.deleteUser(val.id)
+    await getAllProfile()
+  }
   const updateProfile = async (e) => {
     e.preventDefault()
 
@@ -121,7 +130,8 @@ if (data) {
       }
 
       let { error } = await supabase.from('profiles').upsert(updates)
-
+      await getAllProfile()
+      setEditMode(false)
       if (error) {
         throw error
       }
@@ -272,7 +282,9 @@ const createUser =()=>{
         {allUsers.map((val, key) => {
           return (
             <tr key={key}>
-             <td> { (sessionUserId == val.id) && <button onClick={() => setUserToEdit(val)}>edit</button>}</td>
+             <td> { (sessionUserId == val.id) && <button onClick={() => setUserToEdit(val)}>edit</button>}
+             { (sessionUserId != val.id) &&  <button onClick={() => deleteUser(val)}>Delete</button>}
+             </td>
               <td>{val.username}</td>
               <td>{val.full_name}</td>
                
